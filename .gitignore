@@ -1,0 +1,12 @@
+/.vs
+/debug
+/release
+/win32
+*.stash
+*.vcxproj
+*.sln
+*.zip
+*.exe
+*.lib
+*.filters
+*.user
