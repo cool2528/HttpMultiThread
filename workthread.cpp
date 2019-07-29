@@ -55,8 +55,8 @@ void WorkThread::run()
         mFileManager->write(data);
 		mFileManager->flush();
 		mHaveDoneSize = data.size();
-		qDebug() << QString("Download file size %1").arg(mHaveDoneSize) << endl;
 		emit downloadFinish();
+		qDebug() << QString("Download file size %1").arg(mHaveDoneSize) << endl;
     }
     reply->deleteLater();
 	delete DownloadManagerPtr;

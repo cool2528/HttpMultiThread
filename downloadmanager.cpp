@@ -29,7 +29,14 @@ void DownLoadManager::onDownloadProgress(const qint64 doneSize, const qint64 byt
 		mDownloadSize = mDownloadSize > mFileTotalSize ? mFileTotalSize : mDownloadSize;
     }else{
 		mDownloadSize = mDownloadSize > mFileTotalSize ? mFileTotalSize : mDownloadSize;
-		float progress = ((double)(doneSize + mDownloadSize) / (double)mFileTotalSize) * 100;
+		float progress = 0;
+		if (mDownloadSize >= mFileTotalSize) {
+			progress = ((double)(mDownloadSize) / (double)mFileTotalSize) * 100;
+		}
+		else
+		{
+			progress = ((double)(doneSize + mDownloadSize) / (double)mFileTotalSize) * 100;
+		}
         qDebug() << QString("当前进度 %1").arg(progress) << endl;
     }
 }
