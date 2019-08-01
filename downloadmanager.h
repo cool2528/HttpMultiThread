@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QMutex>
 #include <QFile>
+#include <QMap>
 class DownLoadManager : public QObject
 {
     Q_OBJECT
@@ -23,11 +24,12 @@ private:
     qint64 mFileTotalSize; //文件总大小
     QString mFilePath;  //  文件的保存路径
     QString mFileName;  //以及文件名字
-    QMutex mMutex;  //多线程互斥
 	QFile* mFile;
 	qint64 mDownloadSize;
 	size_t mThreadNumber;
 	size_t mFinishThread;
+	QMap<qint64, qint64> mDownloadProgress;
+	QMutex mMutex;
 };
 
 #endif // DOWNLOADMANAGER_H
