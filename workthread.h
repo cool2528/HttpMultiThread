@@ -19,6 +19,7 @@ protected:
 private:
     qint64 mStartPoint;//下载的起点
     qint64 mEndPoint;   //下载结束的位置
+	qint64 mHavedonesize;
     QFile* mFileManager; // 将下载的文件写入到文件
     QString mUrl;
 	QMutex* mMutex;

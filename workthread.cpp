@@ -8,6 +8,7 @@
 #include <QMutexLocker>
 #include <QDebug>
 WorkThread::WorkThread(QThread *parent):QThread (parent)
+, mHavedonesize(0)
 {
 
 }
@@ -32,7 +33,6 @@ void WorkThread::run()
 {
 	qDebug() << "WorkThread::run()" << QThread::currentThreadId() << endl;
     //在这个线程函数中执行我们的下载任务
-	qint64 mHaveDoneSize = 0;	//下载的文件大小
     auto DownloadManagerPtr = new QNetworkAccessManager();
     QUrl url(mUrl);
     QNetworkRequest Request(url);
@@ -47,26 +47,18 @@ void WorkThread::run()
     QEventLoop loop;
     connect(reply,&QNetworkReply::finished,&loop,&QEventLoop::quit);
 	connect(reply,&QNetworkReply::downloadProgress, this, [this](qint64 bytesReceived, qint64 bytesTotal) {
-        //qDebug() << QString("Download file size %1").arg(bytesReceived) << endl;
         emit downloadProgress(bytesReceived, bytesTotal);
 	});
 	connect(reply, &QNetworkReply::readyRead, this, [&]() {
 		mMutex->lock();
-        qint64 readSize = 0;
-        uchar* pdata = mFileManager->map(mStartPoint,mEndPoint - mStartPoint);
-        if(!pdata){
-            qDebug() << "map failed" << mFileManager->errorString();
-            return ;
-        }
-        qint64 realSize = 0;
-        do {
-            realSize = reply->read((char *)pdata + mHaveDoneSize, 1024);
-            if (realSize <= 0) {
-                break;
-            }
-            mHaveDoneSize += realSize;
-        } while (realSize);
-        mFileManager->unmap(pdata);
+		if (mFileManager->seek(mStartPoint + mHavedonesize)) {
+			QByteArray data = reply->readAll();
+			qint64&& size = mFileManager->write(data);
+			if (size != -1)
+			{
+				mHavedonesize += size;
+			}
+		}
 		mMutex->unlock();
 	}, Qt::DirectConnection);
     loop.exec();

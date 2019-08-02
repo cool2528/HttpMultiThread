@@ -74,7 +74,6 @@ bool DownLoadManager::startDownload(const QString &szUrl, size_t nNumber)
 	mDownloadProgress.clear();
     mFile = new QFile(this);
 	mFile->setFileName(mFilePath + mFileName);
-    mFile->resize(mFileTotalSize);
 	mFile->open(QIODevice::ReadWrite);
 	mThreadNumber = nNumber;
 	mDownloadSize = 0;
