@@ -4,6 +4,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     DownLoadManager Manager;
-    Manager.startDownload("https://download.virtualbox.org/virtualbox/6.0.10/VirtualBox-6.0.10-132072-Win.exe",5);
+    Manager.startDownload("https://dldir1.qq.com/qqfile/qq/PCTIM2.3.2/21158/TIM2.3.2.21158.exe",5);
     return a.exec();
 }

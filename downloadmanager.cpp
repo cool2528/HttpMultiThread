@@ -1,4 +1,4 @@
-#include "downloadmanager.h"
+﻿#include "downloadmanager.h"
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -19,6 +19,8 @@ DownLoadManager::DownLoadManager(QObject *parent) : QObject(parent)
 
 void DownLoadManager::onDownloadProgress(const qint64 doneSize, const qint64 bytesTotal)
 {
+#if 1
+	mMutex.lock();
 	if (doneSize >= bytesTotal)
 	{
 		mDownloadSize += doneSize;
@@ -37,8 +39,21 @@ void DownLoadManager::onDownloadProgress(const qint64 doneSize, const qint64 byt
 		{
 			progress = ((double)(doneSize + mDownloadSize) / (double)mFileTotalSize) * 100;
 		}
-        qDebug() << QString("当前进度 %1").arg(progress) << endl;
+        qDebug() << QString(QStringLiteral("当前进度 %1")).arg(progress) << endl;
     }
+	mMutex.unlock();
+#endif
+#if 0
+	mDownloadProgress[bytesTotal] = doneSize;
+	auto it = mDownloadProgress.constBegin();
+	float Totalprogress = 0;
+	for (; it != mDownloadProgress.constEnd(); ++it) {
+		float progress = 0;
+		progress = ((double)it.value() / (double)it.key()) * 100 / mThreadNumber;
+		Totalprogress += progress;
+	}
+	qDebug() << "当前完成进度" << Totalprogress << endl;
+#endif
 }
 
 void DownLoadManager::onDownloadFinish()
@@ -56,17 +71,22 @@ bool DownLoadManager::startDownload(const QString &szUrl, size_t nNumber)
     if(!getFileInfo(szUrl)){
         return bResult;
     }
+	mDownloadProgress.clear();
     mFile = new QFile(this);
 	mFile->setFileName(mFilePath + mFileName);
-	mFile->open(QIODevice::WriteOnly);
+	mFile->open(QIODevice::ReadWrite);
 	mThreadNumber = nNumber;
 	mDownloadSize = 0;
 	mFinishThread = 0;
     for(size_t i =0;i<nNumber;i++){
         qint64 nstart = mFileTotalSize * i / nNumber;
         qint64 nEnd = mFileTotalSize * (i+1) / nNumber;
+		if (i)
+		{
+			nstart--;
+		}
         auto work = new WorkThread;
-        work->init(szUrl,nstart,nEnd, mFile,&mMutex);
+        work->init(szUrl,nstart,nEnd, mFile,&mThreadMutex);
         connect(work,&WorkThread::finished,work,&WorkThread::deleteLater);
 		connect(work, &WorkThread::downloadFinish, this, &DownLoadManager::onDownloadFinish);
 		connect(work, &WorkThread::downloadProgress, this, &DownLoadManager::onDownloadProgress);
