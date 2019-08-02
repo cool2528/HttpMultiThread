@@ -1,4 +1,4 @@
-#include "workthread.h"
+﻿#include "workthread.h"
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -12,7 +12,7 @@ WorkThread::WorkThread(QThread *parent):QThread (parent)
 
 }
 
-void WorkThread::init(const QString &szUrl, const qint64 startPoint, const qint64 endPoint, QFile *FileManger)
+void WorkThread::init(const QString &szUrl, const qint64 startPoint, const qint64 endPoint, QFile *FileManger, QMutex* mutex)
 {
     if(szUrl.isEmpty() || !FileManger){
         return;
@@ -25,12 +25,14 @@ void WorkThread::init(const QString &szUrl, const qint64 startPoint, const qint6
     mUrl = szUrl;
     mStartPoint = startPoint;
     mFileManager = FileManger;
+	mMutex = mutex;
 }
 
 void WorkThread::run()
 {
 	qDebug() << "WorkThread::run()" << QThread::currentThreadId() << endl;
     //在这个线程函数中执行我们的下载任务
+	qint64 mHaveDoneSize = 0;	//下载的文件大小
     auto DownloadManagerPtr = new QNetworkAccessManager();
     QUrl url(mUrl);
     QNetworkRequest Request(url);
@@ -48,15 +50,26 @@ void WorkThread::run()
         //qDebug() << QString("Download file size %1").arg(bytesReceived) << endl;
         emit downloadProgress(bytesReceived, bytesTotal);
 	});
+	connect(reply, &QNetworkReply::readyRead, this, [&]() {
+		mMutex->lock();
+        qint64 readSize = 0;
+        uchar* pdata = mFileManager->map(mStartPoint,mEndPoint - mStartPoint);
+        if(!pdata){
+            qDebug() << "map failed" << mFileManager->errorString();
+            return ;
+        }
+        qint64 realSize = 0;
+        do {
+            realSize = reply->read((char *)pdata + mHaveDoneSize, 1024);
+            if (realSize <= 0) {
+                break;
+            }
+            mHaveDoneSize += realSize;
+        } while (realSize);
+        mFileManager->unmap(pdata);
+		mMutex->unlock();
+	}, Qt::DirectConnection);
     loop.exec();
-    if(QNetworkReply::NoError == reply->error()){
-        mFileManager->seek(mStartPoint);
-        QByteArray data = reply->readAll();
-        mFileManager->write(data);
-		mFileManager->flush();
-		mHaveDoneSize = data.size();
-		//qDebug() << QString("Download file size %1").arg(mHaveDoneSize) << endl;
-    }
 	emit downloadFinish();
     reply->deleteLater();
 	delete DownloadManagerPtr;

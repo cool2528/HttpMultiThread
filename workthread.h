@@ -3,13 +3,14 @@
 
 #include <QThread>
 #include <QFile>
+class QMutex;
 class WorkThread : public QThread
 {
 	Q_OBJECT
 public:
     explicit WorkThread(QThread* parent = nullptr);
 public:
-    void init(const QString& szUrl,const qint64 startPoint,const qint64 endPoint,QFile* FileManger);
+    void init(const QString& szUrl,const qint64 startPoint,const qint64 endPoint,QFile* FileManger, QMutex* mutex);
 signals:
 	void downloadProgress(const qint64 donesize, qint64 bytesTotal);
 	void downloadFinish();
@@ -20,7 +21,7 @@ private:
     qint64 mEndPoint;   //下载结束的位置
     QFile* mFileManager; // 将下载的文件写入到文件
     QString mUrl;
-	qint64 mHaveDoneSize;	//下载的文件大小
+	QMutex* mMutex;
 };
 
 #endif // WORKTHREAD_H

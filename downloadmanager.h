@@ -30,6 +30,7 @@ private:
 	size_t mFinishThread;
 	QMap<qint64, qint64> mDownloadProgress;
 	QMutex mMutex;
+	QMutex mThreadMutex;
 };
 
 #endif // DOWNLOADMANAGER_H
